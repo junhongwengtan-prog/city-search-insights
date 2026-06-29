@@ -85,11 +85,21 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  /* Mobile: kill 300ms tap delay & ghost click highlight */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
-.btn-ghost:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 32px rgba(92,124,250,0.5);
-  filter: brightness(1.06);
+@media (hover: hover) {
+  .btn-ghost:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 32px rgba(92,124,250,0.5);
+    filter: brightness(1.06);
+  }
+}
+.btn-ghost:active {
+  transform: translateY(0) scale(0.97);
+  filter: brightness(0.95);
 }
 @keyframes btnPulse {
   0%   { box-shadow: 0 8px 22px rgba(92,124,250,0.35), 0 0 0 0 rgba(92,124,250,0.45); }
@@ -113,6 +123,15 @@ body {
 
 .city-pin-g.active .pin-label-bg { fill: #fff; stroke: var(--text); }
 .city-pin-g.active .pin-label { fill: var(--text); }
+
+/* Make city pins tappable on touch devices */
+.city-pin-g { cursor: pointer; touch-action: manipulation; }
+.city-pin-g .pulse,
+.city-pin-g .pin-label-bg,
+.city-pin-g .pin-label,
+.city-pin-g text { pointer-events: none; }
+.city-pin-g .pin-core,
+.city-pin-g circle { pointer-events: auto; }
 
 /* Hint */
 .hint {
@@ -202,8 +221,16 @@ body {
   cursor: pointer;
   transition: transform .2s, box-shadow .2s;
   box-shadow: 0 12px 28px rgba(92,124,250,0.32);
+  /* Mobile: kill 300ms tap delay */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  min-height: 44px; /* WCAG/Apple HIG min tap target */
 }
-.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 36px rgba(92,124,250,0.42); }
+@media (hover: hover) {
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 36px rgba(92,124,250,0.42); }
+}
+.btn-primary:active { transform: translateY(0) scale(0.98); filter: brightness(0.95); }
 
 /* Side panel */
 .panel {
@@ -230,17 +257,27 @@ body {
   position: absolute;
   top: 14px;
   right: 14px;
-  width: 32px; height: 32px;
+  width: 38px; height: 38px;
   border-radius: 50%;
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.95);
   color: var(--text);
-  font-size: 18px;
+  font-size: 20px;
   cursor: pointer;
   z-index: 5;
   transition: background .2s, transform .2s;
+  /* Mobile tap reliability */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.panel-close:hover { background: #fff; transform: rotate(90deg); border-color: var(--border-strong); }
+@media (hover: hover) {
+  .panel-close:hover { background: #fff; transform: rotate(90deg); border-color: var(--border-strong); }
+}
+.panel-close:active { transform: scale(0.92); background: #f5f5f5; }
 
 .panel-header {
   position: relative;
@@ -381,7 +418,9 @@ body {
   transition: background .18s, border-color .18s;
   position: relative;
 }
-.kw-row:hover { background: rgba(92,124,250,0.06); border-color: rgba(92,124,250,0.25); }
+@media (hover: hover) {
+  .kw-row:hover { background: rgba(92,124,250,0.06); border-color: rgba(92,124,250,0.25); }
+}
 .kw-row .top {
   display: flex; align-items: center; gap: 12px;
   justify-content: space-between;
@@ -450,11 +489,19 @@ body {
   font-size: 12px;
   color: var(--text-dim);
   cursor: pointer;
-  padding: 3px 0;
+  padding: 6px 4px;
   transition: color .2s;
   font-weight: 500;
+  /* Mobile tap reliability */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  min-height: 36px;
 }
-.legend-item:hover { color: var(--text); }
+@media (hover: hover) {
+  .legend-item:hover { color: var(--text); }
+}
+.legend-item:active { color: var(--accent); }
 .legend-dot {
   width: 9px; height: 9px;
   border-radius: 50%;
@@ -1216,32 +1263,53 @@ async function initMap() {
     g.append('circle').attr('class', 'pulse')
       .attr('r', 10).attr('fill', 'none')
       .attr('stroke', city.accent)
-      .attr('stroke-width', 2.5).style('opacity', 0.8);
+      .attr('stroke-width', 2.5).style('opacity', 0.8)
+      .style('pointer-events', 'none');
 
     g.append('circle')
       .attr('r', 22).attr('fill', city.accent)
-      .attr('opacity', 0.20).attr('filter', 'url(#pinGlow)');
+      .attr('opacity', 0.20).attr('filter', 'url(#pinGlow)')
+      .style('pointer-events', 'none');
 
     g.append('circle').attr('class', 'pin-core')
       .attr('r', 14).attr('fill', city.accent)
       .attr('stroke', '#fff').attr('stroke-width', 3);
 
     g.append('circle')
-      .attr('r', 9).attr('fill', city.accent2).attr('opacity', 0.95);
+      .attr('r', 9).attr('fill', city.accent2).attr('opacity', 0.95)
+      .style('pointer-events', 'none');
 
     g.append('text')
       .attr('text-anchor', 'middle').attr('dominant-baseline', 'central')
-      .attr('font-size', 14).attr('y', 1).text(city.emoji);
+      .attr('font-size', 14).attr('y', 1).text(city.emoji)
+      .style('pointer-events', 'none');
 
     g.append('rect').attr('class', 'pin-label-bg')
       .attr('x', -54).attr('y', 22).attr('width', 108).attr('height', 22).attr('rx', 11)
-      .attr('fill', 'rgba(255,255,255,0.92)').attr('stroke', 'rgba(20,30,60,0.18)');
+      .attr('fill', 'rgba(255,255,255,0.92)').attr('stroke', 'rgba(20,30,60,0.18)')
+      .style('pointer-events', 'none');
     g.append('text').attr('class', 'pin-label')
       .attr('text-anchor', 'middle').attr('y', 37)
       .attr('font-size', 12).attr('font-weight', 700).attr('fill', '#1a2236')
-      .text(city.name);
+      .text(city.name)
+      .style('pointer-events', 'none');
 
-    g.on('click', (event) => { event.stopPropagation(); openCity(city.id); });
+    /* Big invisible tap target on top — makes pins finger-friendly without changing visuals */
+    g.append('rect').attr('class', 'pin-hit')
+      .attr('x', -28).attr('y', -28).attr('width', 56).attr('height', 70)
+      .attr('fill', 'transparent')
+      .style('cursor', 'pointer')
+      .style('pointer-events', 'auto');
+
+    const handleTap = (event) => {
+      event.stopPropagation();
+      if (event.cancelable) event.preventDefault();
+      openCity(city.id);
+    };
+    g.on('click', handleTap);
+    /* iOS Safari: ensure touchend fires openCity even if click is suppressed */
+    g.node().addEventListener('touchend', handleTap, { passive: false });
+
     g.on('mouseenter', function () {
       d3.select(this).select('.pin-core').transition().duration(200).attr('r', 17);
     });
@@ -1308,10 +1376,14 @@ async function initMap() {
   // Fade the bus in after the route line finishes drawing
   busG.transition().delay(900).duration(600).style('opacity', 1);
 
-  STATE.zoom = d3.zoom().scaleExtent([0.7, 6]).on('zoom', (event) => {
-    root.attr('transform', event.transform);
-  });
+  STATE.zoom = d3.zoom().scaleExtent([0.7, 6])
+    .clickDistance(8) /* Mobile: tolerate finger jitter so taps register as clicks */
+    .on('zoom', (event) => {
+      root.attr('transform', event.transform);
+    });
   svg.call(STATE.zoom);
+  /* Allow native scroll/pinch on the SVG so taps don't get hijacked */
+  svg.style('touch-action', 'manipulation');
 
   window.addEventListener('resize', () => {
     sized();
@@ -1344,6 +1416,11 @@ async function initMap() {
   });
 
   $('#resetView').addEventListener('click', resetView);
+  /* Also wire a touchend so the reset button is instantly responsive on mobile */
+  $('#resetView').addEventListener('touchend', (e) => {
+    if (e.cancelable) e.preventDefault();
+    resetView();
+  }, { passive: false });
 }
 
 function pulseLoop() {
@@ -1663,8 +1740,27 @@ function renderLegend() {
     </button>
   `).join('');
   $$('.legend-item').forEach(el => {
-    el.addEventListener('click', () => openCity(el.dataset.city));
+    bindTap(el, () => openCity(el.dataset.city));
   });
+}
+
+/* ---------- Mobile-friendly tap binder ----------
+ * Some mobile browsers (esp. iOS Safari) suppress the synthetic 'click'
+ * after a touch ends, or fire it 300ms late. Binding both 'click' and
+ * 'touchend' (with preventDefault on touchend, plus a 350ms guard against
+ * double-fire) makes every button feel instant on phone and still work on desktop. */
+function bindTap(el, handler) {
+  if (!el) return;
+  let lastTouch = 0;
+  el.addEventListener('click', (e) => {
+    if (Date.now() - lastTouch < 500) return; // already handled by touchend
+    handler(e);
+  });
+  el.addEventListener('touchend', (e) => {
+    if (e.cancelable) e.preventDefault();
+    lastTouch = Date.now();
+    handler(e);
+  }, { passive: false });
 }
 
 /* ---------- Init ---------- */
@@ -1672,8 +1768,8 @@ document.addEventListener('DOMContentLoaded', () => {
   renderLegend();
   initMap();
 
-  $('#introClose').addEventListener('click', () => $('#introCard').classList.add('hidden'));
-  $('#panelClose').addEventListener('click', closePanel);
+  bindTap($('#introClose'), () => $('#introCard').classList.add('hidden'));
+  bindTap($('#panelClose'), closePanel);
 
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePanel(); });
 });
