@@ -7,7 +7,7 @@
   <meta name="description" content="An interactive US map for exploring city-level brand-positive search narratives across 8 US cities." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="(min-width: 769px)" />
   <style>/* City Search Insights — Map Explorer (Bright theme) */
 :root {
   --bg-0: #f7f5ef;
@@ -111,7 +111,7 @@ body {
 /* Map */
 #map {
   position: absolute;
-  inset: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   background:
     radial-gradient(900px 600px at 12% -10%, rgba(92,124,250,0.18), transparent 60%),
     radial-gradient(800px 600px at 110% 10%, rgba(32,201,151,0.16), transparent 60%),
@@ -253,6 +253,8 @@ body {
   flex-direction: column;
 }
 .panel.is-open { transform: translateX(0); }
+/* The "Back to map" mobile bar is hidden on desktop, shown only via mobile media query below */
+.panel-back-bar { display: none; }
 .panel-close {
   position: absolute;
   top: 14px;
@@ -516,98 +518,162 @@ body {
   .legend-list { grid-template-columns: repeat(4, 1fr); }
 }
 
-/* ---------- Mobile-friendly enhancements ---------- */
+/* ============================================================
+   PORTRAIT-PHONE REDESIGN (≤768px)
+   - Strip ALL backdrop-filter (massive perf win on iOS Safari)
+   - Single-column layout, full-screen panel with proper "Back" header
+   - Bigger pins, simpler shadows, no infinite animations
+   ============================================================ */
 @media (max-width: 768px) {
-  body { overflow: hidden; touch-action: pan-x pan-y; }
+  /* Use system fonts on phones — the Google Font is media-blocked in HTML */
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+    overflow: hidden;
+    touch-action: pan-x pan-y;
+  }
 
-  /* Topbar: tighter, allow wrapping */
-  .topbar { padding: 9px 12px; flex-wrap: wrap; gap: 8px; }
-  .brand { gap: 8px; }
-  .brand-mark { width: 26px; height: 26px; border-radius: 7px; }
-  .brand-text > div:first-child { font-size: 14px; }
-  .brand-text small { font-size: 9px; letter-spacing: 1px; }
-  .topbar-actions { gap: 8px; }
+  /* KILL all backdrop-filters on mobile — single biggest cause of jank/slow load */
+  .topbar, .intro-card, .panel, .legend, .hint,
+  .panel-close { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+
+  /* Simpler map background — drop multi-radial gradients */
+  #map {
+    background:
+      linear-gradient(180deg, #f7f5ef 0%, #eaeefb 100%);
+  }
+
+  /* Disable infinite button pulse on mobile (uses GPU continuously) */
+  .btn-ghost { animation: none !important; box-shadow: 0 4px 14px rgba(92,124,250,0.3); }
+
+  /* ---------- Topbar (compact, always visible) ---------- */
+  .topbar {
+    padding: 8px 12px;
+    gap: 8px;
+    background: rgba(255,255,255,0.96);
+    height: 52px;
+    box-sizing: border-box;
+  }
+  .brand { gap: 8px; flex: 1; min-width: 0; }
+  .brand-mark { width: 26px; height: 26px; border-radius: 7px; flex: none; }
+  .brand-text > div:first-child { font-size: 13px; line-height: 1.1; }
+  .brand-text small { font-size: 9px; letter-spacing: 0.8px; }
+  .topbar-actions { gap: 6px; flex-shrink: 0; }
   .btn-ghost { padding: 7px 12px; font-size: 12px; }
-  .nav-meta { font-size: 11px; }
+  .nav-meta { display: none; }
 
-  /* Intro card: friendlier padding/typography on small screens */
+  /* ---------- Intro card ---------- */
   .intro-card {
     width: calc(100vw - 24px);
     padding: 22px 18px;
     border-radius: 16px;
-    max-height: calc(100vh - 80px);
+    max-height: calc(100vh - 100px);
     overflow-y: auto;
+    background: #fff;
+    box-shadow: 0 12px 32px rgba(40,60,120,0.18);
   }
-  .intro-card h1 { font-size: 24px; margin: 12px 0 8px; }
+  .intro-card h1 { font-size: 23px; margin: 12px 0 8px; }
   .intro-card p { font-size: 13.5px; }
   .chip { font-size: 11.5px; padding: 5px 10px; }
   .btn-primary { width: 100%; justify-content: center; }
 
-  /* Hint */
-  .hint { font-size: 11.5px; padding: 6px 11px; bottom: 92px; }
+  /* ---------- Hint ---------- */
+  .hint { display: none; }   /* the legend already says "click any city" */
 
-  /* Side panel becomes a bottom sheet for one-thumb reading */
+  /* ---------- Map area ---------- */
+  /* Map sits between topbar (52px) and legend area (~70px); no need for bottom safe area */
+  #map { top: 52px; }
+
+  /* ---------- Side panel → FULL-SCREEN mobile sheet with proper header ---------- */
   .panel {
-    top: auto;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 78vh;
-    border-left: none;
-    border-top: 1px solid var(--border);
-    border-radius: 18px 18px 0 0;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100%; height: 100%;
+    border-left: none; border-radius: 0;
     transform: translateY(100%);
-    transition: transform .35s cubic-bezier(.25, .9, .35, 1);
-    box-shadow: 0 -22px 60px -20px rgba(40,60,120,0.22);
+    transition: transform .28s cubic-bezier(.25, .9, .35, 1);
+    box-shadow: none;
+    background: #fff;
+    z-index: 1100; /* ABOVE topbar so it covers everything cleanly */
+    display: flex;
+    flex-direction: column;
   }
   .panel.is-open { transform: translateY(0); }
-  .panel-close { top: 10px; right: 10px; width: 30px; height: 30px; font-size: 17px; }
-  .panel-header { padding: 22px 18px 16px; }
-  .panel-title-row .em { font-size: 28px; }
-  .panel-title-row h2 { font-size: 24px; }
-  .panel-tagline { font-size: 13.5px; }
-  .panel-summary { font-size: 13.5px; padding: 12px 14px; }
-  .panel-stat .v { font-size: 19px; }
-  .panel-body { padding: 14px 16px 28px; }
 
-  .theme-block { padding: 16px 14px 14px; border-radius: 12px; }
-  .theme-head .em { width: 38px; height: 38px; font-size: 22px; border-radius: 10px; }
-  .theme-head h4 { font-size: 16px; }
+  /* Sticky "Back to map" header at the top of the panel on mobile */
+  .panel-back-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #5C7CFA, #20C997);
+    color: #fff;
+    font-weight: 700;
+    font-size: 14.5px;
+    padding: 14px 20px;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(92,124,250,0.25);
+    flex: none;
+    border: 0;
+    width: 100%;
+    text-align: left;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    touch-action: manipulation;
+    min-height: 48px;
+  }
+  .panel-back-bar:active { filter: brightness(0.92); }
+  .panel-back-bar .arrow { font-size: 18px; line-height: 1; }
+  /* Hide the round × button on mobile — the "Back to map" bar replaces it */
+  .panel-close { display: none; }
+
+  /* Re-tune panel content for full width */
+  .panel-header {
+    padding: 18px 18px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-title-row { gap: 10px; flex-wrap: wrap; }
+  .panel-title-row .em { font-size: 28px; }
+  .panel-title-row h2 { font-size: 22px; }
+  .panel-title-row .state { padding: 3px 9px; font-size: 11px; }
+  .panel-tagline { font-size: 13.5px; }
+  .panel-summary { font-size: 13.5px; padding: 12px 14px; line-height: 1.55; }
+  .panel-summary .pill { display: inline-block; margin-bottom: 6px; }
+  .panel-stats { gap: 8px; }
+  .panel-stat { padding: 10px 11px; }
+  .panel-stat .l { font-size: 10px; }
+  .panel-stat .v { font-size: 18px; }
+  .panel-body { padding: 12px 14px 40px; }
+
+  .theme-block { padding: 14px 12px 12px; border-radius: 12px; }
+  .theme-head .em { width: 36px; height: 36px; font-size: 20px; border-radius: 9px; }
+  .theme-head h4 { font-size: 15px; }
+  .theme-meta { font-size: 11.5px; }
+  .theme-desc { font-size: 13px; }
   .kw-row { padding: 10px 11px; }
-  .kw-row .kw { font-size: 12.5px; }
+  .kw-row .kw { font-size: 12px; word-break: break-word; }
   .kw-row .users { font-size: 14px; }
   .rank-tag { font-size: 10.5px; padding: 2px 7px; }
 
-  /* Legend: compact horizontal pill row, single column-friendly */
+  /* ---------- Legend (bottom of map) ---------- */
   .legend {
-    left: 10px; right: 10px; bottom: 10px;
-    padding: 10px 12px 8px; border-radius: 12px;
+    left: 8px; right: 8px; bottom: 8px;
+    padding: 8px 10px 6px;
+    border-radius: 12px;
     max-width: none;
+    background: rgba(255,255,255,0.97);
+    box-shadow: 0 4px 14px rgba(40,60,120,0.10);
   }
-  .legend-title { font-size: 10px; margin-bottom: 6px; }
-  .legend-list { grid-template-columns: repeat(4, 1fr); gap: 4px 8px; }
-  .legend-item { font-size: 11px; padding: 2px 0; }
+  .legend-title { font-size: 9.5px; margin-bottom: 5px; }
+  .legend-list { grid-template-columns: repeat(4, 1fr); gap: 3px 6px; }
+  .legend-item { font-size: 11px; padding: 4px 0; min-height: 30px; }
   .legend-dot { width: 7px; height: 7px; }
 }
 
 /* Very narrow phones (≤420px) */
 @media (max-width: 420px) {
-  .topbar { padding: 8px 10px; }
-  .nav-meta { display: none; }     /* keep header tidy on tiny screens */
+  .topbar { padding: 7px 10px; height: 48px; }
+  #map { top: 48px; }
   .intro-card h1 { font-size: 21px; }
-  .panel { height: 82vh; }
-  .legend-list { grid-template-columns: repeat(2, 1fr); }
-}
-
-/* Reduce expensive effects on mobile so it stays smooth */
-@media (max-width: 768px) {
-  .topbar, .intro-card, .panel, .legend, .hint {
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-  }
-  /* Slow down/disable pulse on small screens for battery */
-  .city-pin-g .pulse { animation-duration: 2.6s; }
+  .legend-list { grid-template-columns: repeat(4, 1fr); }
+  .legend-item span:not(.legend-dot) { font-size: 10.5px; }
 }
 
 /* Honor users who prefer reduced motion */
@@ -663,6 +729,9 @@ body {
 
 <!-- Side panel -->
 <aside id="panel" class="panel" aria-hidden="true">
+  <button id="panelBackBar" class="panel-back-bar" aria-label="Back to map">
+    <span class="arrow">←</span><span>Back to map</span>
+  </button>
   <button id="panelClose" class="panel-close" aria-label="Close panel">×</button>
   <div id="panelHeader" class="panel-header"></div>
   <div id="panelBody" class="panel-body"></div>
@@ -1128,16 +1197,37 @@ async function initMap() {
   // Background
   svg.append('rect').attr('width', '100%').attr('height', '100%').attr('fill', 'url(#bgGlow)');
 
-  // Subtle grid
-  const grid = svg.append('g').attr('opacity', 0.06).attr('stroke', '#1a2236').attr('stroke-width', 0.5);
-  const step = 64;
-  for (let x = 0; x < STATE.width; x += step) grid.append('line').attr('x1', x).attr('x2', x).attr('y1', 0).attr('y2', STATE.height);
-  for (let y = 0; y < STATE.height; y += step) grid.append('line').attr('y1', y).attr('y2', y).attr('x1', 0).attr('x2', STATE.width);
+  // Subtle grid — desktop only (expensive to paint on phones)
+  const isMobile = window.innerWidth <= 768;
+  STATE.isMobile = isMobile;
+  if (!isMobile) {
+    const grid = svg.append('g').attr('opacity', 0.06).attr('stroke', '#1a2236').attr('stroke-width', 0.5);
+    const step = 64;
+    for (let x = 0; x < STATE.width; x += step) grid.append('line').attr('x1', x).attr('x2', x).attr('y1', 0).attr('y2', STATE.height);
+    for (let y = 0; y < STATE.height; y += step) grid.append('line').attr('y1', y).attr('y2', y).attr('x1', 0).attr('x2', STATE.width);
+  }
 
   const root = svg.append('g').attr('class', 'map-root');
 
-  STATE.projection = d3.geoAlbersUsa().translate([STATE.width / 2, STATE.height / 2 + 30]).scale(Math.min(STATE.width * 1.1, STATE.height * 1.8));
+  // Tune projection so the map fits nicely whether landscape OR portrait phone
+  function computeProjection(w, h) {
+    const portrait = h > w;
+    if (portrait) {
+      // On portrait phones, account for fixed topbar (~56px) and legend (~80px)
+      // Use a scale that fits the wide US shape into the narrow viewport
+      return d3.geoAlbersUsa()
+        .translate([w / 2, h * 0.42])
+        .scale(w * 1.25);
+    }
+    // Landscape / desktop
+    return d3.geoAlbersUsa()
+      .translate([w / 2, h / 2 + 30])
+      .scale(Math.min(w * 1.1, h * 1.8));
+  }
+
+  STATE.projection = computeProjection(STATE.width, STATE.height);
   STATE.path = d3.geoPath(STATE.projection);
+  STATE.computeProjection = computeProjection;
 
   let topo;
   try { topo = await Promise.resolve(window.__US_TOPO__); }
@@ -1387,7 +1477,8 @@ async function initMap() {
 
   window.addEventListener('resize', () => {
     sized();
-    STATE.projection.translate([STATE.width / 2, STATE.height / 2 + 30]).scale(Math.min(STATE.width * 1.1, STATE.height * 1.8));
+    STATE.projection = STATE.computeProjection(STATE.width, STATE.height);
+    STATE.path = d3.geoPath(STATE.projection);
     root.selectAll('.states path').attr('d', STATE.path);
     root.selectAll('.state-border').attr('d', STATE.path);
     pinsG.selectAll('.city-pin-g').each(function(_, i) {
@@ -1424,6 +1515,11 @@ async function initMap() {
 }
 
 function pulseLoop() {
+  // Skip the infinite pulse animation on mobile to save battery & GPU
+  if (STATE.isMobile) {
+    d3.selectAll('.city-pin-g .pulse').style('opacity', 0);
+    return;
+  }
   d3.selectAll('.city-pin-g .pulse')
     .attr('r', 10).style('opacity', 0.8)
     .transition().duration(1800).ease(d3.easeQuadOut)
@@ -1770,6 +1866,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   bindTap($('#introClose'), () => $('#introCard').classList.add('hidden'));
   bindTap($('#panelClose'), closePanel);
+  bindTap($('#panelBackBar'), closePanel);
 
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePanel(); });
 });
